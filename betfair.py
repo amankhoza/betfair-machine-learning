@@ -123,6 +123,9 @@ betting_endpoint = "https://api.betfair.com/exchange/betting/json-rpc/v1"
 keep_alive_endpoint = "https://identitysso.betfair.com/api/keepAlive"
 headers = {'x-application': appKey, 'x-authentication': sessionToken, 'content-type': 'application/json', 'accept': 'application/json'}
 
+if not os.path.exists('./data'):
+    os.makedirs('./data')
+
 keepSessionAlive()
 
 while True:
@@ -143,7 +146,7 @@ while True:
         filename = eventDate+'_'+eventTime+'_'+eventName+'.csv'
         #print (eventName,'\n',eventDate,'\n',runnerMappings,'\n')
 
-        fo = open(filename, 'a')
+        fo = open('./data/'+filename, 'a')
 
         market_book_result = getMarketBookBestOffers(marketid)
 
