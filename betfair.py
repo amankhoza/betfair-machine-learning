@@ -49,8 +49,10 @@ Calling marketCatalouge to get marketDetails
 
 def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
     if (eventTypeID is not None):
-        market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["' + competitionIds + '"],"marketCountries":["' + marketCountries + '"],"marketTypeCodes":["' + marketTypes + '"]},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["EVENT","RUNNER_METADATA"]}, "id": 1}')
-        #market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["' + competitionIds + '"],"marketCountries":["' + marketCountries + '"],"marketTypeCodes":["' + marketTypes + '"], "marketStartTime":{"to":"2016-11-13T23:00:00Z"}},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["EVENT","RUNNER_METADATA"]}, "id": 1}')
+        start_time = (datetime.datetime.now() - datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        end_time = (datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        #these start & end time filters ensure data is collected from 2 hours before ko, up to 2 hours after ko
+        market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["' + competitionIds + '"],"marketCountries":["' + marketCountries + '"],"marketTypeCodes":["' + marketTypes + '"], "marketStartTime":{"from":"' + start_time + '","to":"' + end_time + '"}},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["EVENT","RUNNER_METADATA"]}, "id": 1}')
         market_catalogue_response = callApi(betting_endpoint,market_catalogue_req)
         market_catalouge_loads = json.loads(market_catalogue_response)
         try:
@@ -63,8 +65,8 @@ def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
 def getEplMarketCatalogue():
     return getMarketCatalogue('1','31','','MATCH_ODDS')
 
-def getInternationalFriendliesMarketCatalogue():
-    return getMarketCatalogue('1','5614746','','MATCH_ODDS')
+def getCustomMarketCatalogue():
+    return getMarketCatalogue('1','2005','','MATCH_ODDS')
 
 def getRunnerMappings(market):
     mappings = {}
@@ -131,7 +133,7 @@ keepSessionAlive()
 while True:
 
     marketCatalogueResult = getEplMarketCatalogue()
-    #marketCatalogueResult = getInternationalFriendliesMarketCatalogue()
+    #marketCatalogueResult = getCustomMarketCatalogue()
 
     #print (marketCatalogueResult)
 
