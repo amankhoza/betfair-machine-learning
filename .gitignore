@@ -1,1 +1,6 @@
-data/
+# Ignore everything
+*
+
+# Except these files
+!.gitignore
+!betfair.py
