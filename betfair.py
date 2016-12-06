@@ -58,7 +58,7 @@ def getEplMarketCatalogue():
     return getMarketCatalogue('1','31','','MATCH_ODDS')
 
 def getCustomMarketCatalogue():
-    return getMarketCatalogue('1','4556656','','MATCH_ODDS')
+    return getMarketCatalogue('1','8068520','','MATCH_ODDS')
 
 def getRunnerMappings(market):
     mappings = {}
@@ -149,11 +149,20 @@ while True:
         eventTime = market['event']['openDate'].split('T')[1][:5]
         runnerMappings = getRunnerMappings(market) #ignoring since we don't use runner mapping id's etc
         filename = eventDate+'_'+eventTime+'_'+eventName+'.csv'
+        filepath = './data/'+filename
         #print (eventName,'\n',eventDate,'\n',runnerMappings,'\n')
 
-        # check if file exists, if not create it and add headers, if it exists just open it
-        fo = open('./data/'+filename, 'a')
-
+        if (os.path.isfile(filepath)):
+            fo = open(filepath, 'a')
+        else:
+            fo = open(filepath, 'a')
+            fo.write('Time,Inplay,Status,Version,Total Matched,Total Available,HB1 odds,HB1 liquidity,HB2 odds,HB2 liquidity,HB3 odds,HB3 liquidity,HL1 odds,HL1 liquidity,HL2 odds,HL2 liquidity,HL3 odds,HL3 liquidity,AB1 odds,AB1 liquidity,AB2 odds,AB2 liquidity,AB3 odds,AB3 liquidity,AL1 odds,AL1 liquidity,AL2 odds,AL2 liquidity,AL3 odds,AL3 liquidity,DB1 odds,DB1 liquidity,DB2 odds,DB2 liquidity,DB3 odds,DB3 liquidity,DL1 odds,DL1 liquidity,DL2 odds,DL2 liquidity,DL3 odds,DL3 liquidity\n')
+            # H = Home Team, A = Away Team, D = Draw
+            # B = Back, L = Lay
+            # 1 = best odds, 2 = second best odds, 3 = third best odds
+            # For back odds higher price is better
+            # For lay odds lower price is better
+            
         market_book_result = getMarketBookBestOffers(marketid)
 
         current_time = datetime.datetime.now()
