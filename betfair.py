@@ -10,15 +10,11 @@ import time
 import os
 import threading
 
-#appkey for ref = GCLKwLC319cpyBZE
-#login to betfair.com
-#then go to https://developer.betfair.com/exchange-api/accounts-api-demo/
-#and get session id
-#to play around with visual API tool visit https://developer.betfair.com/exchange-api/betting-api-demo/
-
-"""
-make a call API-NG
-"""
+# appkey for ref = GCLKwLC319cpyBZE
+# login to betfair.com
+# then go to https://developer.betfair.com/exchange-api/accounts-api-demo/
+# and get session id
+# to play around with visual API tool visit https://developer.betfair.com/exchange-api/betting-api-demo/
 
 def callApi(endpoint,jsonrpc_req):
     try:
@@ -43,15 +39,11 @@ def keepSessionAlive():
     #maybe log these into a log file
     threading.Timer(600, keepSessionAlive).start()
 
-"""
-Calling marketCatalouge to get marketDetails
-"""
-
 def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
     if (eventTypeID is not None):
         start_time = (datetime.datetime.now() - datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
         end_time = (datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
-        #these start & end time filters ensure data is collected from 2 hours before ko, up to 2 hours after ko
+        # these start & end time filters ensure data is collected from 2 hours before ko, up to 2 hours after ko
         market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["' + competitionIds + '"],"marketCountries":["' + marketCountries + '"],"marketTypeCodes":["' + marketTypes + '"], "marketStartTime":{"from":"' + start_time + '","to":"' + end_time + '"}},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["EVENT","RUNNER_METADATA"]}, "id": 1}')
         market_catalogue_response = callApi(betting_endpoint,market_catalogue_req)
         market_catalouge_loads = json.loads(market_catalogue_response)
@@ -66,7 +58,7 @@ def getEplMarketCatalogue():
     return getMarketCatalogue('1','31','','MATCH_ODDS')
 
 def getCustomMarketCatalogue():
-    return getMarketCatalogue('1','2005','','MATCH_ODDS')
+    return getMarketCatalogue('1','4556656','','MATCH_ODDS')
 
 def getRunnerMappings(market):
     mappings = {}
@@ -83,12 +75,23 @@ def getRunnerMappings(market):
 #     return runnerData
 
 def extractOddsAsString(runnerString):
+    n = len(runnerString)
+    if (n == 0):
+        return ',,,,,'
+
     ans = ''
-    #print ('len of runnerString is: ',len(runnerString),'\n')
+
     for odds in runnerString:
         if ans:
             ans += ','
         ans += str(odds['price'])+','+str(odds['size'])
+
+    # if there are less than 3 sets of odds, then add blanks so that odds columns align correctly
+    if (n == 1):
+        ans += ',,,,'
+    elif (n == 2):
+        ans += ',,'
+
     return ans
 
 def getRunnerDataString(runners):
@@ -132,8 +135,8 @@ keepSessionAlive()
 
 while True:
 
-    marketCatalogueResult = getEplMarketCatalogue()
-    #marketCatalogueResult = getCustomMarketCatalogue()
+    #marketCatalogueResult = getEplMarketCatalogue()
+    marketCatalogueResult = getCustomMarketCatalogue()
 
     #print (marketCatalogueResult)
 
@@ -148,6 +151,7 @@ while True:
         filename = eventDate+'_'+eventTime+'_'+eventName+'.csv'
         #print (eventName,'\n',eventDate,'\n',runnerMappings,'\n')
 
+        # check if file exists, if not create it and add headers, if it exists just open it
         fo = open('./data/'+filename, 'a')
 
         market_book_result = getMarketBookBestOffers(marketid)
@@ -162,7 +166,5 @@ while True:
         runnerDataString = getRunnerDataString(market_book_result['runners'])
 
         fo.write(str(current_time)+','+str(isInplay)+','+status+','+str(version)+','+str(totalMatched)+','+str(totalAvailable)+','+runnerDataString+'\n')
-
-        #store all stuff above in db
 
     time.sleep(1)
