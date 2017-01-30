@@ -11,10 +11,12 @@ def cleanFile(directory,fileName):
     out = open(directory+cleanedFilesFolderName+'/'+fileName,'a')
 
     marketVersionColumn = df['Version']
+    totalMatchedColumn = df['Total Matched']
 
     n = len(marketVersionColumn)
 
     marketVersion = marketVersionColumn[0]
+    totalMatched = totalMatchedColumn[0]
 
     headers = inp.readline()
 
@@ -26,12 +28,16 @@ def cleanFile(directory,fileName):
         currentLine = inp.readline()
 
         currentVersion = marketVersionColumn[i]
+        currentMatched = totalMatchedColumn[i]
 
         if currentVersion > marketVersion:
             marketVersion = currentVersion
 
-        # this ensures marketVersion is strictly non-decreasing
-        if marketVersion==currentVersion:
+        if currentMatched > totalMatched:
+            totalMatched = currentMatched
+
+        # this ensures marketVersion and totalMatched are strictly non-decreasing
+        if marketVersion==currentVersion and currentMatched==totalMatched:
             out.write(currentLine)
         else:
             errors += 1
