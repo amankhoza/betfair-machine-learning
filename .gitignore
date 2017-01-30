@@ -1,6 +1,6 @@
 # Ignore everything
 *
 
-# Except these files
+# Except python scripts
 !.gitignore
-!betfair.py
+!*.py
