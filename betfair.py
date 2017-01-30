@@ -16,6 +16,11 @@ import threading
 # and get session id
 # to play around with visual API tool visit https://developer.betfair.com/exchange-api/betting-api-demo/
 
+def log(logName,accessMode,logMsg):
+    log_out = open(logName,accessMode)
+    log_out.write(time.ctime()+' - '+logMsg)
+    log_out.close()
+
 # make call to api and return response as a python object
 def callApi(endpoint,jsonrpc_req):
     try:
@@ -25,22 +30,23 @@ def callApi(endpoint,jsonrpc_req):
         jsonString = jsonResponse.decode('utf-8')
         pythonObject = json.loads(jsonString)
         if pythonObject.get('error'): # log api call errors to text file
-            log_out = open('./log/api_call_error.log', 'a')
-            log_out.write(time.ctime()+' - '+str(pythonObject.get('error'))+'\n'+str(pythonObject)+'\n')
+            errorMsg = str(pythonObject.get('error'))+'\n'+str(pythonObject)+'\n'
+            log('./log/api_call_error.log','a',errorMsg)
         return pythonObject
     except urllib.error.URLError as e:
-        print (e.reason)
-        print ('Oops no service available at ' + str(endpoint))
+        errorMsg = str(e.reason)+'\n'+'Oops no service available at '+str(endpoint)
+        log('./log/error.log','a',errorMsg)
         exit()
     except urllib.error.HTTPError:
-        print ('Oops not a valid operation from the service ' + str(endpoint))
+        errorMsg = 'Oops not a valid operation from the service '+str(endpoint)
+        log('./log/error.log','a',errorMsg)
         exit()
 
 def keepSessionAlive():
     keep_alive_req = ''
     keep_alive = callApi(keep_alive_endpoint,keep_alive_req)
-    keep_alive_out = open('./log/last_keep_alive.log', 'w')
-    keep_alive_out.write('Last keep alive called at: '+time.ctime()+'\n'+'Status: '+keep_alive['status']+'\n')
+    keep_alive_msg = 'Last keep alive called'+'\n'+'Status: '+keep_alive['status']+'\n'
+    log('./log/last_keep_alive.log','w',keep_alive_msg)
     threading.Timer(600, keepSessionAlive).start()
 
 def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
@@ -54,7 +60,8 @@ def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
             market_catalouge_results = market_catalogue['result']
             return market_catalouge_results
         except:
-            print ('Exception from API-NG' + str(market_catalouge_results['error']))
+            errorMsg = 'Exception from API-NG'+str(market_catalouge_results['error'])
+            log('./log/error.log','a',errorMsg)
             exit()
 
 def getEplMarketCatalogue():
@@ -92,14 +99,14 @@ def getRunnerDataString(runners):
     return runnerDataString
 
 def getMarketBookBestOffers(marketId):
-    #market_book_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params": {"marketIds":["' + marketId + '"],"priceProjection":{"priceData":["EX_BEST_OFFERS"]}}, "id": 1}' #without virtualise
     market_book_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params": {"marketIds":["' + marketId + '"],"priceProjection":{"priceData":["EX_BEST_OFFERS"],"virtualise":"true"}}, "id": 1}' #with virtualise
     market_book = callApi(betting_endpoint,market_book_req)
     try:
         market_book_result = market_book['result'][0]
         return market_book_result
     except:
-        print  ('Exception from API-NG' + str(market_book_result['error']))
+        errorMsg = 'Exception from API-NG' + str(market_book_result['error'])
+        log('./log/error.log','a',errorMsg)
         exit()
 
 def createDirectories(directories):
