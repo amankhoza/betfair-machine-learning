@@ -2,7 +2,7 @@
 ## Collect odds
 To begin collecting odds you must run the `betfair.py` script using the following command:
 ```
-python3 betfair.py appkey sessionkey
+python3 betfair.py appkey sessionkey &
 ```
 ### Create Application Key
 To create an Application Key visit: <br/> http://docs.developer.betfair.com/docs/display/1smk3cen4v3lu3yomq5qye0ni/Application+Keys#ApplicationKeys-HowtoCreateAnApplicationKey <br/>
