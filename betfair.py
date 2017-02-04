@@ -10,19 +10,23 @@ import time
 import os
 import threading
 
-# appkey for ref = GCLKwLC319cpyBZE
-# login to betfair.com
-# then go to https://developer.betfair.com/exchange-api/accounts-api-demo/
-# and get session id
-# to play around with visual API tool visit https://developer.betfair.com/exchange-api/betting-api-demo/
-
 def log(logName,accessMode,logMsg):
     log_out = open(logName,accessMode)
-    log_out.write(time.ctime()+' - '+logMsg)
+    log_out.write(time.ctime()+' - '+logMsg+'\n\n')
     log_out.close()
 
+def tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry):
+    log('./log/error.log','a',errorMsg)
+    if retry:
+        time.sleep(60)
+        retryMsg = 'Trying to call api again\n'+'Endpoint: '+endpoint
+        log('./log/error.log','a',retryMsg)
+        return callApi(endpoint,jsonrpc_req,retry)
+    else:
+        return None
+
 # make call to api and return response as a python object
-def callApi(endpoint,jsonrpc_req):
+def callApi(endpoint,jsonrpc_req,retry):
     try:
         req = urllib.request.Request(endpoint, jsonrpc_req.encode('utf-8'), headers)
         response = urllib.request.urlopen(req)
@@ -30,24 +34,32 @@ def callApi(endpoint,jsonrpc_req):
         jsonString = jsonResponse.decode('utf-8')
         pythonObject = json.loads(jsonString)
         if pythonObject.get('error'): # log api call errors to text file
-            errorMsg = str(pythonObject.get('error'))+'\n'+str(pythonObject)+'\n'
-            log('./log/api_call_error.log','a',errorMsg)
-        return pythonObject
+            errorMsg = 'Exception from API-NG: '+str(pythonObject.get('error'))+'\n'+str(pythonObject)+'\n'+'Endpoint: '+str(endpoint)
+            return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+        else:
+            return pythonObject
     except urllib.error.URLError as e:
-        errorMsg = str(e.reason)+'\n'+'Oops no service available at '+str(endpoint)
-        log('./log/error.log','a',errorMsg)
-        exit()
-    except urllib.error.HTTPError:
-        errorMsg = 'Oops not a valid operation from the service '+str(endpoint)
-        log('./log/error.log','a',errorMsg)
-        exit()
+        errorMsg = str(e.reason)+'\n'+'Endpoint: '+str(endpoint)
+        return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+    except urllib.error.HTTPError as e:
+        errorMsg = str(e.reason)+'\n'+'Not a valid operation from the service: '+str(endpoint)
+        return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+    except Exception as e:
+        errorMsg = str(e.reason)+'\n'+'Unexpected exception at: '+str(endpoint)
+        return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
 
 def keepSessionAlive():
     keep_alive_req = ''
-    keep_alive = callApi(keep_alive_endpoint,keep_alive_req)
-    keep_alive_msg = 'Last keep alive called'+'\n'+'Status: '+keep_alive['status']+'\n'
-    log('./log/last_keep_alive.log','w',keep_alive_msg)
-    threading.Timer(600, keepSessionAlive).start()
+    keep_alive = callApi(keep_alive_endpoint,keep_alive_req,False)
+    if keep_alive:
+        keep_alive_msg = 'Last keep alive called'+'\n'+'Status: '+keep_alive['status']
+        log('./log/last_keep_alive.log','w',keep_alive_msg)
+    else:
+        keep_alive_msg = 'Keep alive failed'
+        log('./log/last_keep_alive.log','a',keep_alive_msg)
+    t = threading.Timer(600, keepSessionAlive) # run every 10 minutes
+    t.daemon = True
+    t.start()
 
 def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
     if (eventTypeID is not None):
@@ -55,14 +67,9 @@ def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
         end_time = (datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
         # these start & end time filters ensure data is collected from 2 hours before ko, up to 2 hours after ko
         market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["' + competitionIds + '"],"marketCountries":["' + marketCountries + '"],"marketTypeCodes":["' + marketTypes + '"], "marketStartTime":{"from":"' + start_time + '","to":"' + end_time + '"}},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["EVENT","RUNNER_METADATA"]}, "id": 1}')
-        market_catalogue = callApi(betting_endpoint,market_catalogue_req)
-        try:
-            market_catalouge_results = market_catalogue['result']
-            return market_catalouge_results
-        except:
-            errorMsg = 'Exception from API-NG'+str(market_catalouge_results['error'])
-            log('./log/error.log','a',errorMsg)
-            exit()
+        market_catalogue = callApi(betting_endpoint,market_catalogue_req,True)
+        market_catalouge_results = market_catalogue['result']
+        return market_catalouge_results
 
 def getEplMarketCatalogue():
     return getMarketCatalogue('1','31','','MATCH_ODDS')
@@ -100,14 +107,9 @@ def getRunnerDataString(runners):
 
 def getMarketBookBestOffers(marketId):
     market_book_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params": {"marketIds":["' + marketId + '"],"priceProjection":{"priceData":["EX_BEST_OFFERS"],"virtualise":"true"}}, "id": 1}' #with virtualise
-    market_book = callApi(betting_endpoint,market_book_req)
-    try:
-        market_book_result = market_book['result'][0]
-        return market_book_result
-    except:
-        errorMsg = 'Exception from API-NG' + str(market_book_result['error'])
-        log('./log/error.log','a',errorMsg)
-        exit()
+    market_book = callApi(betting_endpoint,market_book_req,True)
+    market_book_result = market_book['result'][0]
+    return market_book_result
 
 def createDirectories(directories):
     for directory in directories:
@@ -116,11 +118,9 @@ def createDirectories(directories):
 
 args = len(sys.argv)
 
-if ( args < 3):
-    print ('Please provide Application key and session token')
-    appKey = input('Enter your application key :')
-    sessionToken = input('Enter your session Token/SSOID :')
-    print ('Thanks for the input provided')
+if (args < 3):
+    print ('Please provide application key and session token as command-line arguments')
+    exit()
 else:
     appKey = sys.argv[1]
     sessionToken = sys.argv[2]
@@ -137,8 +137,6 @@ while True:
 
     marketCatalogueResult = getEplMarketCatalogue()
     #marketCatalogueResult = getCustomMarketCatalogue()
-
-    #print (marketCatalogueResult)
 
     for market in marketCatalogueResult:
 
