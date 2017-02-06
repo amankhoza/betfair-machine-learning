@@ -22,3 +22,7 @@ To plot collected odds for a particular match run the `plotMatchOdds.py` script 
 ```
 python plotMatchOdds.py example.csv
 ```
+You can produce a more detailed plot which includes shaded regions for when the match is inplay, and dashed lines for goals using the following command:
+```
+python plotMatchOdds.py example.csv extraMinsFirstHalf extraMinsSecondHalf minOfGoal1 minOfGoal2 ...
+```
