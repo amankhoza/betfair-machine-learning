@@ -10,6 +10,40 @@ def setPlotLabels(matchTitle,matchDate):
     plt.legend(loc='upper left')
     plt.title(matchTitle+' on '+matchDate)
 
+def setKeyEvents():
+    y1 = 0
+    y2 = 1000
+    args = len(sys.argv)
+    if (args > 2):
+        HT = 15 # half time length
+        fhET = int(sys.argv[2]) # first half extra time
+        shET = int(sys.argv[3]) # second half extra time
+        fhKO = 0 # first half kickoff
+        shKO = 45+fhET+HT # second half kickoff
+        fig, ax = plt.subplots()
+        plt.plot((-60, -60), (y1, y2), 'k--')
+        ax.fill_betweenx([y1, y2], fhKO, 45+fhET, color='lightgreen')
+        ax.fill_betweenx([y1, y2], shKO, shKO+45+shET, color='lightgreen')
+    if (args > 3):
+        for i in range(4,args):
+            keyEventString = sys.argv[i]
+            if '+' in keyEventString:
+                s = keyEventString.split('+')
+                minute = int(s[0])
+                extra = int(s[1])
+                if minute == 45:
+                    minute += extra
+                elif minute == 90:
+                    minute += fhET + HT + extra
+                else:
+                    print ('Error parsing extra time minute: '+keyEventString)
+                    exit()
+            else:
+                minute = int(keyEventString)
+                if minute>45:
+                    minute += fhET + HT
+            plt.plot((minute, minute), (y1, y2), 'k--')
+
 def getTimeInMinutes(matchDateTime,timestamps):
     timeInMinutes = []
     timeFormat = '%Y-%m-%d %H:%M:%S'
@@ -48,12 +82,14 @@ alOdds = df['AL1 odds'].tolist()
 dbOdds = df['DB1 odds'].tolist()
 dlOdds = df['DL1 odds'].tolist()
 
+setKeyEvents()
 plt.figure(1)
 plt.plot(timeInMinutes,hbOdds,label=homeTeam+' back')
 plt.plot(timeInMinutes,abOdds,label=awayTeam+' back')
 plt.plot(timeInMinutes,dbOdds,label='Draw back')
 setPlotLabels(matchTitle,matchDate)
 
+setKeyEvents()
 plt.figure(2)
 plt.plot(timeInMinutes,hlOdds,label=homeTeam+' lay')
 plt.plot(timeInMinutes,alOdds,label=awayTeam+' lay')
