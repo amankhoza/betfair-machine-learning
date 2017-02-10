@@ -3,16 +3,38 @@ import pandas as pd
 import sys
 from datetime import datetime
 import time
+import math
 
-def setPlotLabels(matchTitle,matchDate):
-    plt.xlabel('time in minutes before/after kickoff')
-    plt.ylabel('odds')
+def nanToOne(n):
+    if math.isnan(n):
+        return 1
+    else:
+        return n
+
+def getProbabilities(hbOdds,abOdds,dbOdds):
+    n = max(len(hbOdds),len(abOdds),len(dbOdds))
+    hbPs = []
+    abPs = []
+    dbPs = []
+    for i in range(0,n):
+        hbInvOdds = 1/nanToOne(hbOdds[i])
+        abInvOdds = 1/nanToOne(abOdds[i])
+        dbInvOdds = 1/nanToOne(dbOdds[i])
+        booksum = hbInvOdds + abInvOdds + dbInvOdds
+        hbPs.append(100 * hbInvOdds/booksum)
+        abPs.append(100 * abInvOdds/booksum)
+        dbPs.append(100 * dbInvOdds/booksum)
+    return {'hb':hbPs, 'ab':abPs, 'db':dbPs}
+
+def setPlotLabels(xLabel,yLabel,title):
+    plt.xlabel(xLabel)
+    plt.ylabel(yLabel)
     plt.legend(loc='upper left')
-    plt.title(matchTitle+' on '+matchDate)
+    plt.title(title)
 
-def setKeyEvents():
+def setKeyEvents(maxYValue):
     y1 = 0
-    y2 = 1000
+    y2 = maxYValue
     args = len(sys.argv)
     if (args > 2):
         HT = 15 # half time length
@@ -81,19 +103,30 @@ abOdds = df['AB1 odds'].tolist()
 alOdds = df['AL1 odds'].tolist()
 dbOdds = df['DB1 odds'].tolist()
 dlOdds = df['DL1 odds'].tolist()
+probabilities = getProbabilities(hbOdds,abOdds,dbOdds)
 
-setKeyEvents()
+# print back odds
+setKeyEvents(1000)
 plt.figure(1)
 plt.plot(timeInMinutes,hbOdds,label=homeTeam+' back')
 plt.plot(timeInMinutes,abOdds,label=awayTeam+' back')
 plt.plot(timeInMinutes,dbOdds,label='Draw back')
-setPlotLabels(matchTitle,matchDate)
+setPlotLabels('time in minutes before/after kickoff','odds',matchTitle+' on '+matchDate)
 
-setKeyEvents()
+# print lay odds
+setKeyEvents(1000)
 plt.figure(2)
 plt.plot(timeInMinutes,hlOdds,label=homeTeam+' lay')
 plt.plot(timeInMinutes,alOdds,label=awayTeam+' lay')
 plt.plot(timeInMinutes,dlOdds,label='Draw lay')
-setPlotLabels(matchTitle,matchDate)
+setPlotLabels('time in minutes before/after kickoff','odds',matchTitle+' on '+matchDate)
+
+# print probabilities
+setKeyEvents(100)
+plt.figure(3)
+plt.plot(timeInMinutes,probabilities['hb'],label=homeTeam)
+plt.plot(timeInMinutes,probabilities['ab'],label=awayTeam)
+plt.plot(timeInMinutes,probabilities['db'],label='Draw')
+setPlotLabels('time in minutes before/after kickoff','probability of outcome',matchTitle+' on '+matchDate)
 
 plt.show()
