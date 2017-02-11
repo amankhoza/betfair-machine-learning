@@ -9,7 +9,7 @@ def nanToOne(n):
     if math.isnan(n):
         return 1
     else:
-        return n
+        return 1+0.95*(n-1) # account for betfair commission
 
 def getProbabilities(hbOdds,abOdds,dbOdds):
     n = max(len(hbOdds),len(abOdds),len(dbOdds))
