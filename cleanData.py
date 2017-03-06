@@ -213,7 +213,7 @@ cleanStageOneDirectory = directory+cleanedFilesFolderName+'10'
 if os.path.exists(cleanStageOneDirectory):
     print('ERROR CLEANING HAS ALREADY BEEN RAN ON THIS DIRECTORY')
 else:
-    start = time.clock()
+    start = time.time()
 
     stageNo = 1
     runNo = 0
@@ -246,7 +246,7 @@ else:
     cleaningDesc = 'Removing pre match and suspended odds'
     executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc)
 
-    end = time.clock()
+    end = time.time()
 
     print('\n*** CLEANING COMPLETE ***\n')
-    print('Time elapsed: '+str(int(end-start))+' seconds\n')
+    print('Time elapsed: {} minute(s) {} seconds\n'.format(int((end-start)/60), int((end-start)%60)))
