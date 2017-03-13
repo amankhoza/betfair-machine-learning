@@ -22,7 +22,7 @@ try:
     headers = 'Ranking,Team'
     out.write(headers+'\n')
     for i in range(0, len(teams)):
-        out.write(str(i+1)+','+convertNameToBetfairName(teams[i])+'\n')
+        out.write(str(i+1)+','+convertNameToBetfairName(teams[i]).strip()+'\n')
     out.close()
 except urllib.error.HTTPError:
     print("HTTPERROR!")
