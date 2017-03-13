@@ -3,10 +3,12 @@ import sys
 import os
 import math
 import time
+import numpy
 
 cleanedFilesFolderName = 'CLEAN_'
 
 changeLimit = 0.2
+fluctuationLimit = 2
 
 
 def fixOrder(inDirectory, outDirectory, fileName):
@@ -196,6 +198,64 @@ def removePrematchAndSuspendedOdds(inDirectory, outDirectory, fileName):
     return errors
 
 
+def calculateFluctuation(prevOdds, currOdds):
+    diffOdds = numpy.subtract(currOdds, prevOdds)
+    absDiffOdds = numpy.absolute(diffOdds)
+    fluctuation = sum(absDiffOdds)
+    return fluctuation
+
+
+def removeAnomalousOddsAfterMarketChange(inDirectory, outDirectory, fileName):
+    df = pd.read_csv(inDirectory+fileName)
+
+    inp = open(inDirectory+fileName)
+    out = open(outDirectory+fileName, 'a')
+
+    hbOdds = df['HB1 odds']
+    abOdds = df['AB1 odds']
+    dbOdds = df['DB1 odds']
+    marketVersionColumn = df['Version']
+
+    n = len(df) - 1  # minus one for headers
+
+    headers = inp.readline()
+
+    out.write(headers)
+
+    errors = 0
+    i = 0
+
+    while (i < n):
+        currentLine = inp.readline()
+
+        currVersion = marketVersionColumn[i]
+        nextVersion = marketVersionColumn[i+1]
+
+        if (nextVersion!=currVersion) and (i+2<n):
+            # market change
+            # maybe check more than one fluctuation ahead
+            prevOdds = (hbOdds[i], abOdds[i], dbOdds[i])
+            currOdds = (hbOdds[i+1], abOdds[i+1], dbOdds[i+1])
+            nextOdds = (hbOdds[i+2], abOdds[i+2], dbOdds[i+2])
+            currChangeFluctuation = calculateFluctuation(prevOdds, currOdds)
+            nextChangeFluctuation = calculateFluctuation(prevOdds, nextOdds)
+            if (currChangeFluctuation > 0) and (nextChangeFluctuation/currChangeFluctuation > fluctuationLimit):
+                i += 1
+                errors += 1
+                inp.readline()  # bad line
+
+        out.write(currentLine)
+        i += 1
+
+    lastLine = inp.readline()
+    out.write(lastLine)
+
+    inp.close()
+    out.close()
+
+    return errors
+
+
 def executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc):
     global inDirectory
     outDirectory = directory+cleanedFilesFolderName+str(stageNo)+str(runNo)+'/'
@@ -256,6 +316,12 @@ else:
     runNo = 0
     cleaningFunc = removePrematchAndSuspendedOdds
     cleaningDesc = 'Removing pre match and suspended odds'
+    executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc)
+
+    stageNo = 5
+    runNo = 0
+    cleaningFunc = removeAnomalousOddsAfterMarketChange
+    cleaningDesc = 'Removing anomalous odds after market change'
     executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc)
 
     end = time.time()
