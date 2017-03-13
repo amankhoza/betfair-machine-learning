@@ -4,17 +4,18 @@ from bs4 import BeautifulSoup
 import json
 import time
 
+
 def extractData(dataString):
     secondOpenBraceIndex = 1
     secondToLastClosedBraceIndex = 1
-    for i in range(0,len(dataString)):
+    for i in range(0, len(dataString)):
         if dataString[i] == '{':
             if secondOpenBraceIndex == 1:
                 secondOpenBraceIndex -= 1
             else:
                 secondOpenBraceIndex = i
                 break
-    for i in range(len(dataString)-1,0,-1):
+    for i in range(len(dataString)-1, 0, -1):
         if dataString[i] == '}':
             if secondToLastClosedBraceIndex == 1:
                 secondToLastClosedBraceIndex -= 1
@@ -27,21 +28,23 @@ def extractData(dataString):
         return data['body']['event']
     return data['body']
 
+
 def extractGoalsAndRedCards(playerActions):
     redCards = []
     goals = []
     for player in playerActions:
         for action in player['actions']:
-            time = str(action['displayTime']).replace('\"','').replace('\'','')
+            time = str(action['displayTime']).replace('\"', '').replace('\'', '')
             if action['type'] == 'goal':
                 goals.append(time)
             elif action['type'] == 'red-card' or action['type'] == 'yellow-red-card':
                 redCards.append(time)
             else:
                 print('NEW ACTION FOUND: '+action['type'])
-    return goals,redCards
+    return goals, redCards
 
-def sortEvents(homeEvents,awayEvents):
+
+def sortEvents(homeEvents, awayEvents):
     homeEvents = sorted(homeEvents, key=eval)
     awayEvents = sorted(awayEvents, key=eval)
     if not homeEvents and not awayEvents:
@@ -70,22 +73,23 @@ def sortEvents(homeEvents,awayEvents):
                 j += 1
         return sortedEvents
 
+
 def fetchMatchStats(match_url):
     web_page = urllib.request.urlopen("http://www.bbc.co.uk/"+match_url)
     soup = BeautifulSoup(web_page, 'lxml')
     et = 'NULL'
 
-    for script in soup.findAll('script') :
+    for script in soup.findAll('script'):
         if '/data/bbc-morph-sport-football-header-data' in str(script):
             data = extractData(str(script))
-            homeGoals,homeRedCards = extractGoalsAndRedCards(data['homeTeam']['playerActions'])
-            awayGoals,awayRedCards = extractGoalsAndRedCards(data['awayTeam']['playerActions'])
+            homeGoals, homeRedCards = extractGoalsAndRedCards(data['homeTeam']['playerActions'])
+            awayGoals, awayRedCards = extractGoalsAndRedCards(data['awayTeam']['playerActions'])
             homeTeam = data['homeTeam']['name']['abbreviation']
             awayTeam = data['awayTeam']['name']['abbreviation']
             startTime = data['startTimeInUKHHMM']
             startDate = data['formattedDateInUKTimeZone']['YYYYMMDD']
-            redCards = sortEvents(homeRedCards,awayRedCards)
-            goals = sortEvents(homeGoals,awayGoals)
+            redCards = sortEvents(homeRedCards, awayRedCards)
+            goals = sortEvents(homeGoals, awayGoals)
 
         if 'data/bbc-morph-lx-commentary-data' in str(script):
             data = extractData(str(script))
@@ -103,16 +107,18 @@ def fetchMatchStats(match_url):
 
     return (startDate+','+startTime+','+homeTeam+','+awayTeam+','+et+','+' '.join(redCards)+','+' '.join(goals))
 
+
 # Source: http://stackoverflow.com/questions/3173320/text-progress-bar-in-the-console
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█'):
+def printProgressBar(iteration, total, prefix='', suffix='', decimals=1, length=100, fill='█'):
     percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
     filledLength = int(length * iteration // total)
     bar = fill * filledLength + '-' * (length - filledLength)
-    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end = '\r')
-    if iteration == total: 
+    print('\r%s |%s| %s%% %s' % (prefix, bar, percent, suffix), end='\r')
+    if iteration == total:
         print()
 
-try :
+
+try:
     start = time.time()
 
     web_page = urllib.request.urlopen("http://www.bbc.co.uk/sport/football/premier-league/results")
@@ -127,11 +133,11 @@ try :
     for match in matches:
         out.write(fetchMatchStats(match['href'])+'\n')
         counter += 1
-        printProgressBar(counter, n, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        printProgressBar(counter, n, prefix='Progress:', suffix='Complete', length=50)
 
     out.close()
     end = time.time()
-    print('Time elapsed: {} minutes {} seconds'.format(int((end-start)/60), int((end-start)%60)))
+    print('Time elapsed: {} minutes {} seconds'.format(int((end-start)/60), int((end-start) % 60)))
 
 except urllib.error.HTTPError:
     print("HTTPERROR!")

@@ -10,72 +10,80 @@ import time
 import os
 import threading
 
-def log(logName,accessMode,logMsg):
-    log_out = open(logName,accessMode)
+
+def log(logName, accessMode, logMsg):
+    log_out = open(logName, accessMode)
     log_out.write(time.ctime()+' - '+logMsg+'\n\n')
     log_out.close()
 
-def tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry):
-    log('./log/error.log','a',errorMsg)
+
+def tryCallApiAgain(errorMsg, endpoint, jsonrpc_req, retry):
+    log('./log/error.log', 'a', errorMsg)
     if retry:
         time.sleep(60)
         retryMsg = 'Trying to call api again\n'+'Endpoint: '+endpoint
-        log('./log/error.log','a',retryMsg)
-        return callApi(endpoint,jsonrpc_req,retry)
+        log('./log/error.log', 'a', retryMsg)
+        return callApi(endpoint, jsonrpc_req, retry)
     else:
         return None
 
+
 # make call to api and return response as a python object
-def callApi(endpoint,jsonrpc_req,retry):
+def callApi(endpoint, jsonrpc_req, retry):
     try:
         req = urllib.request.Request(endpoint, jsonrpc_req.encode('utf-8'), headers)
         response = urllib.request.urlopen(req)
         jsonResponse = response.read()
         jsonString = jsonResponse.decode('utf-8')
         pythonObject = json.loads(jsonString)
-        if pythonObject.get('error'): # log api call errors to text file
+        if pythonObject.get('error'):  # log api call errors to text file
             errorMsg = 'Exception from API-NG: '+str(pythonObject.get('error'))+'\n'+str(pythonObject)+'\n'+'Endpoint: '+str(endpoint)
-            return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+            return tryCallApiAgain(errorMsg, endpoint, jsonrpc_req, retry)
         else:
             return pythonObject
     except urllib.error.URLError as e:
         errorMsg = str(e.reason)+'\n'+'Endpoint: '+str(endpoint)
-        return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+        return tryCallApiAgain(errorMsg, endpoint, jsonrpc_req, retry)
     except urllib.error.HTTPError as e:
         errorMsg = str(e.reason)+'\n'+'Not a valid operation from the service: '+str(endpoint)
-        return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+        return tryCallApiAgain(errorMsg, endpoint, jsonrpc_req, retry)
     except Exception as e:
         errorMsg = str(e.reason)+'\n'+'Unexpected exception at: '+str(endpoint)
-        return tryCallApiAgain(errorMsg,endpoint,jsonrpc_req,retry)
+        return tryCallApiAgain(errorMsg, endpoint, jsonrpc_req, retry)
+
 
 def keepSessionAlive():
     keep_alive_req = ''
-    keep_alive = callApi(keep_alive_endpoint,keep_alive_req,False)
+    keep_alive = callApi(keep_alive_endpoint, keep_alive_req, False)
     if keep_alive:
         keep_alive_msg = 'Last keep alive called'+'\n'+'Status: '+keep_alive['status']
-        log('./log/last_keep_alive.log','w',keep_alive_msg)
+        log('./log/last_keep_alive.log', 'w', keep_alive_msg)
     else:
         keep_alive_msg = 'Keep alive failed'
-        log('./log/last_keep_alive.log','a',keep_alive_msg)
-    t = threading.Timer(600, keepSessionAlive) # run every 10 minutes
+        log('./log/last_keep_alive.log', 'a', keep_alive_msg)
+    t = threading.Timer(600, keepSessionAlive)  # run every 10 minutes
     t.daemon = True
     t.start()
 
-def getMarketCatalogue(eventTypeID,competitionIds,marketCountries,marketTypes):
+
+def getMarketCatalogue(eventTypeID, competitionIds, marketCountries, marketTypes):
     if (eventTypeID is not None):
         start_time = (datetime.datetime.now() - datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
         end_time = (datetime.datetime.now() + datetime.timedelta(hours=2)).strftime('%Y-%m-%dT%H:%M:%SZ')
         # these start & end time filters ensure data is collected from 2 hours before ko, up to 2 hours after ko
-        market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"],"competitionIds":["' + competitionIds + '"],"marketCountries":["' + marketCountries + '"],"marketTypeCodes":["' + marketTypes + '"], "marketStartTime":{"from":"' + start_time + '","to":"' + end_time + '"}},"sort":"FIRST_TO_START","maxResults":"100","marketProjection":["EVENT","RUNNER_METADATA"]}, "id": 1}')
-        market_catalogue = callApi(betting_endpoint,market_catalogue_req,True)
+        market_catalogue_req = ('{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventTypeIds":["' + eventTypeID + '"], "competitionIds":["' + competitionIds + '"], "marketCountries":["' + marketCountries + '"], "marketTypeCodes":["' + marketTypes + '"], "marketStartTime":{"from":"' + start_time + '", "to":"' + end_time + '"}}, "sort":"FIRST_TO_START", "maxResults":"100", "marketProjection":["EVENT", "RUNNER_METADATA"]}, "id": 1}')
+        market_catalogue = callApi(betting_endpoint, market_catalogue_req, True)
         market_catalouge_results = market_catalogue['result']
         return market_catalouge_results
 
+
 def getEplMarketCatalogue():
-    return getMarketCatalogue('1','31','','MATCH_ODDS')
+    return getMarketCatalogue('1', '31', '', 'MATCH_ODDS')
+
 
 def getCustomMarketCatalogue():
-    return getMarketCatalogue('1','2005','','MATCH_ODDS')
+    return getMarketCatalogue('1', '2005', '', 'MATCH_ODDS')
+
 
 def extractOddsAsString(runnerString):
     n = len(runnerString)
@@ -97,6 +105,7 @@ def extractOddsAsString(runnerString):
 
     return ans
 
+
 def getRunnerDataString(runners):
     runnerDataString = ''
     for runner in runners:
@@ -105,16 +114,19 @@ def getRunnerDataString(runners):
         runnerDataString += extractOddsAsString(runner['ex']['availableToBack'])+','+extractOddsAsString(runner['ex']['availableToLay'])
     return runnerDataString
 
+
 def getMarketBookBestOffers(marketId):
-    market_book_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params": {"marketIds":["' + marketId + '"],"priceProjection":{"priceData":["EX_BEST_OFFERS"],"virtualise":"true"}}, "id": 1}' #with virtualise
-    market_book = callApi(betting_endpoint,market_book_req,True)
+    market_book_req = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params": {"marketIds":["' + marketId + '"], "priceProjection":{"priceData":["EX_BEST_OFFERS"], "virtualise":"true"}}, "id": 1}' #with virtualise
+    market_book = callApi(betting_endpoint, market_book_req, True)
     market_book_result = market_book['result'][0]
     return market_book_result
+
 
 def createDirectories(directories):
     for directory in directories:
         if not os.path.exists('./'+directory):
             os.makedirs('./'+directory)
+
 
 args = len(sys.argv)
 
@@ -129,14 +141,14 @@ betting_endpoint = "https://api.betfair.com/exchange/betting/json-rpc/v1"
 keep_alive_endpoint = "https://identitysso.betfair.com/api/keepAlive"
 headers = {'x-application': appKey, 'x-authentication': sessionToken, 'content-type': 'application/json', 'accept': 'application/json'}
 
-createDirectories(['data','log'])
+createDirectories(['data', 'log'])
 
 keepSessionAlive()
 
 while True:
 
     marketCatalogueResult = getEplMarketCatalogue()
-    #marketCatalogueResult = getCustomMarketCatalogue()
+    # marketCatalogueResult = getCustomMarketCatalogue()
 
     for market in marketCatalogueResult:
 

@@ -8,6 +8,7 @@ cleanedFilesFolderName = 'CLEAN_'
 
 changeLimit = 0.2
 
+
 def fixOrder(inDirectory, outDirectory, fileName):
     df = pd.read_csv(inDirectory+fileName)
 
@@ -50,6 +51,7 @@ def fixOrder(inDirectory, outDirectory, fileName):
 
     return errors
 
+
 def removeSuspendedOddsFromEndOfMatch(inDirectory, outDirectory, fileName):
     df = pd.read_csv(inDirectory+fileName)
 
@@ -64,7 +66,7 @@ def removeSuspendedOddsFromEndOfMatch(inDirectory, outDirectory, fileName):
     while (statusColumn[i] == 'SUSPENDED'):
         i -= 1
 
-    finalSuspendIndex = i+1 # add one for headers
+    finalSuspendIndex = i+1  # add one for headers
 
     errors = n - finalSuspendIndex
 
@@ -81,19 +83,26 @@ def removeSuspendedOddsFromEndOfMatch(inDirectory, outDirectory, fileName):
 
     return errors
 
+
 def nanToOne(n):
     if math.isnan(n):
         return 1
     else:
         return n
 
+
+def sign(num):
+    return math.copysign(1, num)
+
+
 def checkIfAnomalousResult(prev, curr, next):
-    sign = lambda x: math.copysign(1, x) # ensures only spikes on graph are detected
+    # sign = lambda x: math.copysign(1, x)  # ensures only spikes on graph are detected
     diff1 = nanToOne(prev) - nanToOne(curr)
     diff2 = nanToOne(next) - nanToOne(curr)
     change1 = diff1 / nanToOne(prev)
     change2 = diff2 / nanToOne(next)
     return (abs(change1)>changeLimit and abs(change2)>changeLimit and sign(change1)==sign(change2))
+
 
 def removeAnomalousResults(inDirectory, outDirectory, fileName):
     df = pd.read_csv(inDirectory+fileName)
@@ -104,7 +113,7 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
     hbOdds = df['HB1 odds']
     abOdds = df['AB1 odds']
     dbOdds = df['DB1 odds']
-    timestamps = df['Time']
+    # timestamps = df['Time']
 
     n = len(hbOdds)
 
@@ -125,7 +134,7 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
         dbBool = checkIfAnomalousResult(dbOdds[i-1], dbOdds[i], dbOdds[i+1])
 
         if (hbBool or abBool or dbBool):
-            #print ('SBP: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
+            # print ('SBP: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
             errors += 1
         elif (i<(n-2) and (hbOdds[i]==hbOdds[i+1] or abOdds[i]==abOdds[i+1] or dbOdds[i]==dbOdds[i+1])):
             # double bad point check
@@ -133,15 +142,15 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
             abBool = abOdds[i]==abOdds[i+1] and checkIfAnomalousResult(abOdds[i-1], abOdds[i], abOdds[i+2])
             dbBool = dbOdds[i]==dbOdds[i+1] and checkIfAnomalousResult(dbOdds[i-1], dbOdds[i], dbOdds[i+2])
             if (hbBool or abBool or dbBool):
-                #print ('DBP: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
-                badLine = inp.readline()
+                # print ('DBP: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
+                inp.readline()  # nad line - was assigning this to a variable before
                 errors += 2
                 i += 1
             else:
-                #print ('NO ERROR: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
+                # print ('NO ERROR: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
                 out.write(currentLine)
         else:
-            #print ('NO ERROR: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
+            # print ('NO ERROR: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
             out.write(currentLine)
 
         i += 1
@@ -153,6 +162,7 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
     out.close()
 
     return errors
+
 
 def removePrematchAndSuspendedOdds(inDirectory, outDirectory, fileName):
     df = pd.read_csv(inDirectory+fileName)
@@ -185,6 +195,7 @@ def removePrematchAndSuspendedOdds(inDirectory, outDirectory, fileName):
 
     return errors
 
+
 def executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc):
     global inDirectory
     outDirectory = directory+cleanedFilesFolderName+str(stageNo)+str(runNo)+'/'
@@ -202,6 +213,7 @@ def executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc):
     print('\n'+'Total errors fixed in stage '+str(stageNo)+' run '+str(runNo+1)+': '+str(totalErrorsFixed))
     inDirectory = outDirectory
     return totalErrorsFixed
+
 
 directory = sys.argv[1] if sys.argv[1].endswith('/') else sys.argv[1]+'/'
 inDirectory = directory
@@ -235,7 +247,7 @@ else:
     while flag:
         totalErrorsFixed = executeCleaningStage(stageNo, runNo, cleaningFunc, cleaningDesc)
         if totalErrorsFixed > 0:
-            flag =  True
+            flag = True
             runNo += 1
         else:
             flag = False
@@ -249,4 +261,4 @@ else:
     end = time.time()
 
     print('\n*** CLEANING COMPLETE ***\n')
-    print('Time elapsed: {} minute(s) {} seconds\n'.format(int((end-start)/60), int((end-start)%60)))
+    print('Time elapsed: {} minute(s) {} seconds\n'.format(int((end-start)/60), int((end-start) % 60)))
