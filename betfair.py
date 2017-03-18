@@ -78,7 +78,7 @@ def getMarketCatalogue(eventTypeID, competitionIds, marketCountries, marketTypes
 
 
 def getEplMarketCatalogue():
-    return getMarketCatalogue('1', '31', '', 'MATCH_ODDS')
+    return getMarketCatalogue('1', '10932509', '', 'MATCH_ODDS')
 
 
 def getCustomMarketCatalogue():
