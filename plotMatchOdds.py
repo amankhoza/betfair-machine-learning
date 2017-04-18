@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import matplotlib.lines as lines
 import pandas as pd
 import sys
 from datetime import datetime
@@ -30,6 +32,10 @@ def getProbabilities(hbOdds, abOdds, dbOdds):
 
 
 def setPlotLabels(xLabel, yLabel, title):
+    dashed_line = lines.Line2D([0, 0], [0, 0], color='black', label='Goal', linestyle='dashed')
+    inplay = mpatches.Patch(color='lightgreen', label='In-play')
+    legend2 = plt.legend(handles=[inplay, dashed_line], loc='upper right')
+    plt.gca().add_artist(legend2)
     plt.xlabel(xLabel)
     plt.ylabel(yLabel)
     plt.legend(loc='upper left')
