@@ -83,8 +83,8 @@ def main(unused_argv):
     predictions = multiRegressor.predict(prediction_set)
 
     for label in LABELS:
-        actual = predictions[label]
-        preds = list(prediction_set[label].values)
+        preds = predictions[label]
+        actual = list(prediction_set[label].values)
         combined = zip(actual, preds)
         print('Actual \t\t Prediction \t\t Diff')
         totalDiff = 0
