@@ -32,10 +32,11 @@ def getProbabilities(hbOdds, abOdds, dbOdds):
 
 
 def setPlotLabels(xLabel, yLabel, title):
-    dashed_line = lines.Line2D([0, 0], [0, 0], color='black', label='Goal', linestyle='dashed')
-    inplay = mpatches.Patch(color='lightgreen', label='In-play')
-    legend2 = plt.legend(handles=[inplay, dashed_line], loc='upper right')
-    plt.gca().add_artist(legend2)
+    if (args > 2):
+        dashed_line = lines.Line2D([0, 0], [0, 0], color='black', label='Goal', linestyle='dashed')
+        inplay = mpatches.Patch(color='lightgreen', label='In-play')
+        legend2 = plt.legend(handles=[inplay, dashed_line], loc='upper right')
+        plt.gca().add_artist(legend2)
     plt.xlabel(xLabel)
     plt.ylabel(yLabel)
     plt.legend(loc='upper left')
@@ -45,7 +46,6 @@ def setPlotLabels(xLabel, yLabel, title):
 def setKeyEvents(maxYValue):
     y1 = 0
     y2 = maxYValue
-    args = len(sys.argv)
     if (args > 2):
         HT = 15  # half time length
         fhET = int(sys.argv[2])  # first half extra time
@@ -53,7 +53,7 @@ def setKeyEvents(maxYValue):
         fhKO = 0  # first half kickoff
         shKO = 45+fhET+HT  # second half kickoff
         fig, ax = plt.subplots()
-        plt.plot((-60, -60), (y1, y2), 'k--')
+        # plt.plot((-60, -60), (y1, y2), 'k--')  # plot odds when lineups announced
         ax.fill_betweenx([y1, y2], fhKO, 45+fhET, color='lightgreen')
         ax.fill_betweenx([y1, y2], shKO, shKO+45+shET, color='lightgreen')
     if (args > 3):
@@ -95,6 +95,8 @@ def getTimeInMinutes(matchDateTime, timestamps):
 
 plt.style.use('ggplot')
 
+args = len(sys.argv)
+
 filePath = sys.argv[1]
 fileName = (filePath.split('/')[-1]).split('.')[0]
 matchTitle = fileName.split('_')[2]
@@ -123,7 +125,7 @@ plt.figure(1)
 plt.plot(timeInMinutes, hbOdds, label=homeTeam+' back')
 plt.plot(timeInMinutes, abOdds, label=awayTeam+' back')
 plt.plot(timeInMinutes, dbOdds, label='Draw back')
-setPlotLabels('time in minutes before/after kickoff', 'odds', matchTitle+' on '+matchDate)
+setPlotLabels('time in minutes after kickoff', 'odds', matchTitle+' on '+matchDate)
 
 # print lay odds
 setKeyEvents(1000)
@@ -131,7 +133,7 @@ plt.figure(2)
 plt.plot(timeInMinutes, hlOdds, label=homeTeam+' lay')
 plt.plot(timeInMinutes, alOdds, label=awayTeam+' lay')
 plt.plot(timeInMinutes, dlOdds, label='Draw lay')
-setPlotLabels('time in minutes before/after kickoff', 'odds', matchTitle+' on '+matchDate)
+setPlotLabels('time in minutes after kickoff', 'odds', matchTitle+' on '+matchDate)
 
 # print probabilities
 setKeyEvents(100)
@@ -139,6 +141,6 @@ plt.figure(3)
 plt.plot(timeInMinutes, probabilities['hb'], label=homeTeam)
 plt.plot(timeInMinutes, probabilities['ab'], label=awayTeam)
 plt.plot(timeInMinutes, probabilities['db'], label='Draw')
-setPlotLabels('time in minutes before/after kickoff', 'probability of outcome', matchTitle+' on '+matchDate)
+setPlotLabels('time in minutes after kickoff', 'probability of outcome', matchTitle+' on '+matchDate)
 
 plt.show()
