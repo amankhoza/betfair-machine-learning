@@ -1,6 +1,7 @@
 from sklearn import kernel_ridge
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
+from sklearn import tree
 import pandas as pd
 import os
 import numpy
@@ -28,8 +29,10 @@ kernel = sys.argv[2]
 
 if kernel == 'linear':
     clf = kernel_ridge.KernelRidge(kernel="linear")
-else:
+elif kernel == 'poly':
     clf = kernel_ridge.KernelRidge(kernel="poly", degree=2, alpha=0.5, gamma=0.01)
+elif kernel == 'tree':
+    clf = tree.DecisionTreeRegressor()
 
 clf.fit(x_train, z_train)
 
@@ -45,6 +48,10 @@ if not os.path.exists(outputDirectory):
 numpy.set_printoptions(formatter={'float_kind': '{:f}'.format})
 numpy.savetxt(outputDirectory+"/pred.csv", z_pred, delimiter=",", fmt='%f')
 numpy.savetxt(outputDirectory+"/act.csv", z_test, delimiter=",", fmt='%f')
+
+print('Actual\tPred')
+for i in range(0, len(z_test)):
+    print(str(z_test[i])+'\t'+str(z_pred[i]))
 
 for i in range(0, len(LABELS)):
     print('Avg diff for '+LABELS[i]+': '+str(avgDiffs[i]))
