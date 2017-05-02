@@ -62,7 +62,7 @@ def getProbabilities(hbOdds, abOdds, dbOdds):
     abInvOdds = 1/nanToOne(abOdds)
     dbInvOdds = 1/nanToOne(dbOdds)
     booksum = hbInvOdds + abInvOdds + dbInvOdds
-    hbP = 100 * (hbInvOdds/booksum)  # was multiplying each of these Ps by 100 to make them more readable
+    hbP = 100 * (hbInvOdds/booksum)
     abP = 100 * (abInvOdds/booksum)
     dbP = 100 * (dbInvOdds/booksum)
     return str(hbP)+','+str(abP)+','+str(dbP)
@@ -100,7 +100,6 @@ def fetchRanking(team):
 def convertGoalsToMinutesAfterKO(goals, fhEt):
     convertedGoals = []
     ht = 15  # half time length
-    # shKO = 45+fhET+ht  # second half kickoff
 
     for i in range(0, len(goals)):
         keyEventString = goals[i].replace('-', '')
@@ -217,7 +216,6 @@ for fileName in sorted(os.listdir(directory)):
         if markets[i] == currentMarket:
             continue
         else:
-            # if (isSigChange(getProbabilities(hbOdds[i-1],abOdds[i-1],dbOdds[i-1]),getProbabilities(hbOdds[i],abOdds[i],dbOdds[i]))):
             t = timeInMinutes[i]
             prevPs = getProbabilities(hbOdds[i-1], abOdds[i-1], dbOdds[i-1])
             currPs = getProbabilities(hbOdds[i], abOdds[i], dbOdds[i])

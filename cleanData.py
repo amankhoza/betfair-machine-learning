@@ -98,7 +98,6 @@ def sign(num):
 
 
 def checkIfAnomalousResult(prev, curr, next):
-    # sign = lambda x: math.copysign(1, x)  # ensures only spikes on graph are detected
     diff1 = nanToOne(prev) - nanToOne(curr)
     diff2 = nanToOne(next) - nanToOne(curr)
     change1 = diff1 / nanToOne(prev)
@@ -115,7 +114,6 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
     hbOdds = df['HB1 odds']
     abOdds = df['AB1 odds']
     dbOdds = df['DB1 odds']
-    # timestamps = df['Time']
 
     n = len(hbOdds)
 
@@ -136,7 +134,6 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
         dbBool = checkIfAnomalousResult(dbOdds[i-1], dbOdds[i], dbOdds[i+1])
 
         if (hbBool or abBool or dbBool):
-            # print ('SBP: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
             errors += 1
         elif (i<(n-2) and (hbOdds[i]==hbOdds[i+1] or abOdds[i]==abOdds[i+1] or dbOdds[i]==dbOdds[i+1])):
             # double bad point check
@@ -144,15 +141,12 @@ def removeAnomalousResults(inDirectory, outDirectory, fileName):
             abBool = abOdds[i]==abOdds[i+1] and checkIfAnomalousResult(abOdds[i-1], abOdds[i], abOdds[i+2])
             dbBool = dbOdds[i]==dbOdds[i+1] and checkIfAnomalousResult(dbOdds[i-1], dbOdds[i], dbOdds[i+2])
             if (hbBool or abBool or dbBool):
-                # print ('DBP: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
-                inp.readline()  # nad line - was assigning this to a variable before
+                inp.readline()
                 errors += 2
                 i += 1
             else:
-                # print ('NO ERROR: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
                 out.write(currentLine)
         else:
-            # print ('NO ERROR: ', timestamps[i], hbOdds[i], hbBool, abOdds[i], abBool, dbOdds[i], dbBool)
             out.write(currentLine)
 
         i += 1
@@ -232,8 +226,6 @@ def removeAnomalousOddsAfterMarketChange(inDirectory, outDirectory, fileName):
         nextVersion = marketVersionColumn[i+1]
 
         if (nextVersion!=currVersion) and (i+2<n):
-            # market change
-            # maybe check more than one fluctuation ahead
             prevOdds = (hbOdds[i], abOdds[i], dbOdds[i])
             currOdds = (hbOdds[i+1], abOdds[i+1], dbOdds[i+1])
             nextOdds = (hbOdds[i+2], abOdds[i+2], dbOdds[i+2])
@@ -242,7 +234,7 @@ def removeAnomalousOddsAfterMarketChange(inDirectory, outDirectory, fileName):
             if (currChangeFluctuation > 0) and (nextChangeFluctuation/currChangeFluctuation > fluctuationLimit):
                 i += 1
                 errors += 1
-                inp.readline()  # bad line
+                inp.readline()
 
         out.write(currentLine)
         i += 1

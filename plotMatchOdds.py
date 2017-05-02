@@ -53,7 +53,7 @@ def setKeyEvents(maxYValue):
         fhKO = 0  # first half kickoff
         shKO = 45+fhET+HT  # second half kickoff
         fig, ax = plt.subplots()
-        # plt.plot((-60, -60), (y1, y2), 'k--')  # plot odds when lineups announced
+        plt.plot((-60, -60), (y1, y2), 'k--')  # plot odds when lineups announced
         ax.fill_betweenx([y1, y2], fhKO, 45+fhET, color='lightgreen')
         ax.fill_betweenx([y1, y2], shKO, shKO+45+shET, color='lightgreen')
     if (args > 3):
